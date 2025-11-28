@@ -5,7 +5,8 @@ terraform {
     bucket         = "soakoto-terraform-multi-env-tfstate-782545587425"
     key            = "infrastructure/terraform.tfstate"
     region         = "us-east-1"
-    use_lockfile = "soakoto-terraform-multi-env-tfstate-locks"
+    dynamodb_table = "soakoto-terraform-multi-env-tfstate-locks"
+    use_lockfile   = true
     encrypt        = true
   }
 
