@@ -68,7 +68,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           # terraform_version: ${{ env.TF_VERSION }}
-          terraform_version: 1.13.0
+          terraform_version: 1.12.0
 
       - name: Get AWS Account ID
         id: account
@@ -139,7 +139,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           # terraform_version: ${{ env.TF_VERSION }}
-          terraform_version: 1.13.0
+          terraform_version: 1.12.0
 
       - name: Get AWS Account ID
         id: account

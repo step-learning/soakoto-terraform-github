@@ -99,7 +99,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           # terraform_version: ${{ env.TF_VERSION }}
-          terraform_version: 1.13.0
+          terraform_version: 1.12.0
 
       - name: Get AWS Account ID
         id: account
@@ -117,7 +117,6 @@ jobs:
             -backend-config="region=${{ env.AWS_REGION }}" \
             -backend-config="dynamodb_table=${{ env.PROJECT_NAME }}-tfstate-locks" \
             -backend-config="encrypt=true"
-
       - name: Select or Create Terraform Workspace
         working-directory: ./terraform/infrastructure
         run: |
@@ -195,7 +194,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           # terraform_version: ${{ env.TF_VERSION }}
-          terraform_version: 1.13.0
+          terraform_version: 1.12.0
 
       - name: Get AWS Account ID
         id: account

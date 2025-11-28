@@ -1,12 +1,13 @@
 terraform {
-  required_version = ">=1.13.0"
+  # required_version = ">=1.13.0"
+  required_version = ">=1.0.0, <1.13.0"
   
   backend "s3" {
     bucket         = "soakoto-terraform-multi-env-tfstate-782545587425"
     key            = "infrastructure/terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "soakoto-terraform-multi-env-tfstate-locks"
-    use_lockfile   = true
+    # use_lockfile   = true
     encrypt        = true
   }
 
