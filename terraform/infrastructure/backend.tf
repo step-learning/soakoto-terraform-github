@@ -2,12 +2,11 @@ terraform {
   required_version = ">=1.13.0"
   
   backend "s3" {
-    # These values will be provided via backend config file or CLI
-    # bucket         = "terraform-multi-env-tfstate-ACCOUNT_ID"
-    # key            = "infrastructure/terraform.tfstate"
-    # region         = "us-east-1"
-    # dynamodb_table = "terraform-multi-env-tfstate-locks"
-    # encrypt        = true
+    bucket         = "soakoto-terraform-multi-env-tfstate-782545587425"
+    key            = "infrastructure/terraform.tfstate"
+    region         = "us-east-1"
+    use_lockfile = "soakoto-terraform-multi-env-tfstate-locks"
+    encrypt        = true
   }
 
   required_providers {
