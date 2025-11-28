@@ -3,9 +3,9 @@ resource "aws_s3_bucket" "terraform_state" {
   bucket = "${var.project_name}-tfstate-${data.aws_caller_identity.current.account_id}"
 
   tags = {
-    Name        = "Terraform State Bucket"
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name      = "Terraform State Bucket"
+    Project   = var.project_name
+    ManagedBy = "Terraform"
   }
 }
 
@@ -41,9 +41,9 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 
 # DynamoDB Table for State Locking
 resource "aws_dynamodb_table" "terraform_locks" {
-  name           = "${var.project_name}-tfstate-locks"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "LockID"
+  name         = "${var.project_name}-tfstate-locks"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
 
   attribute {
     name = "LockID"
@@ -51,9 +51,9 @@ resource "aws_dynamodb_table" "terraform_locks" {
   }
 
   tags = {
-    Name        = "Terraform State Lock Table"
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
+    Name      = "Terraform State Lock Table"
+    Project   = var.project_name
+    ManagedBy = "Terraform"
   }
 }
 
