@@ -1,0 +1,187 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+      confirmation:
+        description: 'Type the environment name to confirm destruction'
+        required: true
+        type: string
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - plan-destroy
+          - destroy
+        default: 'plan-destroy'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.6.0
+  PROJECT_NAME: terraform-multi-env
+
+jobs:
+  validate-input:
+    runs-on: ubuntu-latest
+    outputs:
+      validated: ${{ steps.validate.outputs.validated }}
+    steps:
+      - name: Validate Confirmation
+        id: validate
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "${{ github.event.inputs.environment }}" ]; then
+            echo "::error::Confirmation does not match environment name"
+            exit 1
+          fi
+          echo "validated=true" >> $GITHUB_OUTPUT
+
+  terraform-destroy-plan:
+    needs: validate-input
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Destroy-${{ github.run_id }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          # terraform_version: ${{ env.TF_VERSION }}
+          terraform_version: 1.13.0
+
+      - name: Get AWS Account ID
+        id: account
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "account_id=${ACCOUNT_ID}" >> $GITHUB_OUTPUT
+          echo "AWS Account ID: ${ACCOUNT_ID}"
+
+      - name: Terraform Init
+        working-directory: ./terraform/infrastructure
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.PROJECT_NAME }}-tfstate-${{ steps.account.outputs.account_id }}" \
+            -backend-config="key=infrastructure/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ env.PROJECT_NAME }}-tfstate-locks" \
+            -backend-config="encrypt=true"
+
+      - name: Select Terraform Workspace
+        working-directory: ./terraform/infrastructure
+        run: |
+          terraform workspace select ${{ github.event.inputs.environment }} || \
+          (echo "::error::Workspace ${{ github.event.inputs.environment }} does not exist" && exit 1)
+
+      - name: Terraform Plan Destroy
+        working-directory: ./terraform/infrastructure
+        run: |
+          terraform plan -destroy \
+            -var-file="../../environments/${{ github.event.inputs.environment }}.tfvars" \
+            -out=destroy-plan \
+            -no-color
+
+      - name: Upload Destroy Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: destroy-plan-${{ github.event.inputs.environment }}
+          path: terraform/infrastructure/destroy-plan
+          retention-days: 5
+
+      - name: Display Destroy Plan Summary
+        working-directory: ./terraform/infrastructure
+        run: |
+          echo "## Destroy Plan Summary for ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **WARNING**: This will destroy all resources in the ${{ github.event.inputs.environment }} environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          terraform show -no-color destroy-plan >> $GITHUB_STEP_SUMMARY
+
+  terraform-destroy-apply:
+    needs: [validate-input, terraform-destroy-plan]
+    if: github.event.inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ github.event.inputs.environment }}-destroy
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Destroy-${{ github.run_id }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          # terraform_version: ${{ env.TF_VERSION }}
+          terraform_version: 1.13.0
+
+      - name: Get AWS Account ID
+        id: account
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "account_id=${ACCOUNT_ID}" >> $GITHUB_OUTPUT
+
+      - name: Terraform Init
+        working-directory: ./terraform/infrastructure
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.PROJECT_NAME }}-tfstate-${{ steps.account.outputs.account_id }}" \
+            -backend-config="key=infrastructure/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ env.PROJECT_NAME }}-tfstate-locks" \
+            -backend-config="encrypt=true"
+
+      - name: Select Terraform Workspace
+        working-directory: ./terraform/infrastructure
+        run: terraform workspace select ${{ github.event.inputs.environment }}
+
+      - name: Download Destroy Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: destroy-plan-${{ github.event.inputs.environment }}
+          path: terraform/infrastructure/
+
+      - name: Final Confirmation
+        run: |
+          echo "🔴 DESTROYING ENVIRONMENT: ${{ github.event.inputs.environment }}"
+          echo "This action cannot be undone!"
+          sleep 5
+
+      - name: Terraform Destroy
+        working-directory: ./terraform/infrastructure
+        run: terraform apply -auto-approve destroy-plan
+
+      - name: Verify Destruction
+        working-directory: ./terraform/infrastructure
+        run: |
+          echo "## Destruction Complete for ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All resources have been destroyed" >> $GITHUB_STEP_SUMMARY
+          echo "🗑️ Workspace: ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "⏰ Timestamp: $(date -u)" >> $GITHUB_STEP_SUMMARY
