@@ -112,10 +112,10 @@ jobs:
         working-directory: ./terraform/infrastructure
         run: |
           terraform init \
-            -backend-config="bucket=${{ env.PROJECT_NAME }}-tfstate-${{ steps.account.outputs.account_id }}" \
+            -backend-config="bucket=soakoto-terraform-multi-env-tfstate-782545587425" \
             -backend-config="key=infrastructure/terraform.tfstate" \
-            -backend-config="region=${{ env.AWS_REGION }}" \
-            -backend-config="dynamodb_table=${{ env.PROJECT_NAME }}-tfstate-locks" \
+            -backend-config="region=us-east-1" \
+            -backend-config="soakoto-terraform-multi-env-tfstate-locks" \
             -backend-config="encrypt=true"
       - name: Select or Create Terraform Workspace
         working-directory: ./terraform/infrastructure
@@ -206,12 +206,11 @@ jobs:
         working-directory: ./terraform/infrastructure
         run: |
           terraform init \
-            -backend-config="bucket=${{ env.PROJECT_NAME }}-tfstate-${{ steps.account.outputs.account_id }}" \
+            -backend-config="bucket=soakoto-terraform-multi-env-tfstate-782545587425" \
             -backend-config="key=infrastructure/terraform.tfstate" \
-            -backend-config="region=${{ env.AWS_REGION }}" \
-            -backend-config="dynamodb_table=${{ env.PROJECT_NAME }}-tfstate-locks" \
+            -backend-config="region=us-east-1" \
+            -backend-config="soakoto-terraform-multi-env-tfstate-locks" \
             -backend-config="encrypt=true"
-
       - name: Select Terraform Workspace
         working-directory: ./terraform/infrastructure
         run: terraform workspace select ${{ needs.determine-environment.outputs.environment }}
