@@ -115,7 +115,7 @@ jobs:
             -backend-config="bucket=soakoto-terraform-multi-env-tfstate-782545587425" \
             -backend-config="key=infrastructure/terraform.tfstate" \
             -backend-config="region=us-east-1" \
-            -backend-config="soakoto-terraform-multi-env-tfstate-locks" \
+            -backend-config="dynamodb_table=soakoto-terraform-multi-env-tfstate-locks" \
             -backend-config="encrypt=true"
       - name: Select or Create Terraform Workspace
         working-directory: ./terraform/infrastructure
@@ -209,7 +209,7 @@ jobs:
             -backend-config="bucket=soakoto-terraform-multi-env-tfstate-782545587425" \
             -backend-config="key=infrastructure/terraform.tfstate" \
             -backend-config="region=us-east-1" \
-            -backend-config="soakoto-terraform-multi-env-tfstate-locks" \
+            -backend-config="dynamodb_table=soakoto-terraform-multi-env-tfstate-locks" \
             -backend-config="encrypt=true"
       - name: Select Terraform Workspace
         working-directory: ./terraform/infrastructure
