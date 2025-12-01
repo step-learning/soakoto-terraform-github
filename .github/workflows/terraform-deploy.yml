@@ -131,6 +131,24 @@ jobs:
         working-directory: ./terraform/infrastructure
         run: terraform fmt -check -recursive
 
+        # Debugging Steps
+      - name: Debug - Check Repository Structure
+        run: |
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "Current directory:"
+          pwd
+          echo "Repository root contents:"
+          ls -la $GITHUB_WORKSPACE
+          echo "Environments directory:"
+          ls -la $GITHUB_WORKSPACE/environments/
+          echo "Looking for tfvars files:"
+          find $GITHUB_WORKSPACE -name "*.tfvars" -type f
+
+      - name: Debug - Check Environment Variable
+        run: |
+          echo "Environment: ${{ needs.determine-environment.outputs.environment }}"
+          echo "Full path: $GITHUB_WORKSPACE/environments/${{ needs.determine-environment.outputs.environment }}.tfvars"
+          test -f "$GITHUB_WORKSPACE/environments/${{ needs.determine-environment.outputs.environment }}.tfvars" && echo "File exists!" || echo "File does NOT exist!"
       - name: Terraform Plan
         working-directory: ./terraform/infrastructure
         run: |
