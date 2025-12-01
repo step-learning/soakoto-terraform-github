@@ -97,7 +97,7 @@ jobs:
         working-directory: ./terraform/infrastructure
         run: |
           terraform plan -destroy \
-            -var-file="../../environments/${{ github.event.inputs.environment }}.tfvars" \
+            -var-file="${GITHUB_WORKSPACE}/environments/${{ github.event.inputs.environment }}.tfvars" \
             -out=destroy-plan \
             -no-color
 

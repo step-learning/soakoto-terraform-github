@@ -135,7 +135,7 @@ jobs:
         working-directory: ./terraform/infrastructure
         run: |
           terraform plan \
-            -var-file="../../environments/${{ needs.determine-environment.outputs.environment }}.tfvars" \
+            -var-file="${GITHUB_WORKSPACE}/environments/${{ needs.determine-environment.outputs.environment }}.tfvars" \
             -out=tfplan \
             -no-color
         continue-on-error: false
